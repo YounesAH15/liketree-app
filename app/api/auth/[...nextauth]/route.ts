@@ -4,7 +4,7 @@ import SpotifyProvider from "next-auth/providers/spotify";
 
 const handler = NextAuth({
   providers: [
-    // 1. Google (YouTube)
+    // ... tes providers Google et Spotify (ne change rien ici) ...
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
@@ -17,40 +17,43 @@ const handler = NextAuth({
         }
       }
     }),
-    // 2. Spotify (Nouveau !)
     SpotifyProvider({
       clientId: process.env.SPOTIFY_CLIENT_ID || "",
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
       authorization: {
         params: {
-          // On demande l'historique d'écoute et les likes
           scope: "user-read-email user-library-read user-read-recently-played user-top-read"
         }
       }
     })
   ],
   callbacks: {
+    // ... tes callbacks (ne change rien ici) ...
     async jwt({ token, account }) {
-      // Si c'est une connexion initiale (Google ou Spotify)
       if (account) {
         token.accessToken = account.access_token;
-        token.provider = account.provider; // On retient si c'est "google" ou "spotify"
+        token.provider = account.provider;
       }
       return token;
     },
     async session({ session, token }) {
-      // On passe les infos au frontend
-      // @ts-ignore (On ignore l'erreur TS temporaire sur les types custom)
+      // @ts-ignore
       session.accessToken = token.accessToken;
       // @ts-ignore
       session.provider = token.provider; 
       return session;
     }
   },
-  // Page de login personnalisée (optionnel mais propre)
   pages: {
     signIn: '/', 
-  }
+  },
+  
+  // --- LE CORRECTIF EST ICI ---
+  // On lui dit explicitement où trouver la clé, même s'il est un peu aveugle
+  secret: process.env.NEXTAUTH_SECRET, 
+  
+  // Ajoute aussi ceci pour éviter les warnings en mode dev
+  debug: process.env.NODE_ENV === 'development',
 });
 
 export { handler as GET, handler as POST };
